@@ -28,4 +28,18 @@ object AuthedUser {
       role: Role,
       phone: Phone,
     ) extends AuthedUser
+
+  @JsonCodec
+  case class SeniorUser(
+      id: PersonId,
+      createdAt: ZonedDateTime,
+      firstname: NonEmptyString,
+      lastname: NonEmptyString,
+      role: Role,
+      phone: Phone,
+      github: NonEmptyString,
+      linkedIn: NonEmptyString,
+      mainSkill: SkillId,
+      suggestion: NonEmptyString,
+    )
 }

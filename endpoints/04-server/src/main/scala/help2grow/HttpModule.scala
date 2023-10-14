@@ -18,6 +18,7 @@ import uz.scala.http4s.utils.Routes
 import help2grow.domain.AuthedUser
 import help2grow.http.Environment
 import help2grow.routes.AuthRoutes
+import help2grow.routes.UserRoutes
 
 object HttpModule {
   private def allRoutes[F[_]: Monad: MonadThrow: JsonDecoder: Logger](
@@ -25,7 +26,8 @@ object HttpModule {
     ): NonEmptyList[HttpRoutes[F]] =
     NonEmptyList
       .of[Routes[F, AuthedUser]](
-        new AuthRoutes[F](env.algebras.auth)
+        new AuthRoutes[F](env.algebras.auth),
+        new UserRoutes[F](env.algebras.users),
       )
       .map { r =>
         Router(

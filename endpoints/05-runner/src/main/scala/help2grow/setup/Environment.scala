@@ -19,6 +19,7 @@ import uz.scala.skunk.SkunkSession
 import help2grow.Algebras
 import help2grow.Phone
 import help2grow.Repositories
+import help2grow.algebras.UsersAlgebra
 import help2grow.auth.impl.Auth
 import help2grow.auth.impl.LiveMiddleware
 import help2grow.domain.AuthedUser
@@ -32,7 +33,9 @@ case class Environment[F[_]: Async: Logger: Dispatcher](
     auth: Auth[F, AuthedUser],
     middleware: server.AuthMiddleware[F, AuthedUser],
   ) {
-  private val algebras: Algebras[F] = Algebras[F](auth)
+  private val Repositories(users, seniors) = repositories
+  private val usersAlgebra = UsersAlgebra.make[F](users, seniors)
+  private val algebras: Algebras[F] = Algebras[F](auth, usersAlgebra)
 
   lazy val toServer: ServerEnvironment[F] =
     ServerEnvironment(

@@ -26,6 +26,8 @@ import help2grow.utils.uuid
 package object domain {
   @derive(eqv, show, uuid)
   @newtype case class PersonId(value: UUID)
+  @derive(eqv, show, uuid)
+  @newtype case class SkillId(value: UUID)
 
   @newtype case class JwtAccessTokenKey(secret: NonEmptyString)
 
