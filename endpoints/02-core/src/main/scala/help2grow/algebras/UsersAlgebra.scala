@@ -6,10 +6,13 @@ import cats.implicits.toFunctorOps
 import tsec.passwordhashers.PasswordHasher
 import tsec.passwordhashers.jca.SCrypt
 
+import help2grow.domain.AuthedUser.SeniorUser
 import help2grow.domain.AuthedUser.User
 import help2grow.domain.PersonId
+import help2grow.domain.Skill
 import help2grow.domain.auth.AccessCredentials
 import help2grow.domain.enums.Role
+import help2grow.domain.inputs.SeniorFilters
 import help2grow.domain.inputs.SeniorInput
 import help2grow.effects.Calendar
 import help2grow.effects.GenUUID
@@ -20,6 +23,8 @@ import help2grow.utils.ID
 
 trait UsersAlgebra[F[_]] {
   def createSenior(seniorInput: SeniorInput): F[PersonId]
+  def getSeniors(seniorFilters: SeniorFilters): F[List[SeniorUser]]
+  def getSkills(userId: PersonId): F[List[Skill]]
 }
 
 object UsersAlgebra {
@@ -57,5 +62,13 @@ object UsersAlgebra {
         )
         _ <- seniorsRepository.create(seniorData)
       } yield id
+
+    override def getSeniors(
+        seniorFilters: SeniorFilters
+      ): F[List[SeniorUser]] =
+      seniorsRepository.get(seniorFilters)
+
+    override def getSkills(userId: PersonId): F[List[Skill]] =
+      seniorsRepository.getSkills(userId)
   }
 }

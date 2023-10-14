@@ -5,14 +5,15 @@ import cats.effect.Resource
 import skunk._
 import uz.scala.skunk.syntax.all.skunkSyntaxCommandOps
 import uz.scala.skunk.syntax.all.skunkSyntaxQueryOps
-
 import help2grow.domain.AuthedUser.SeniorUser
+import help2grow.domain.{PersonId, Skill}
 import help2grow.domain.inputs.SeniorFilters
-import help2grow.repos.sql.SeniorsSql
+import help2grow.repos.sql.{SeniorsSql, UserSkillsSql}
 import help2grow.repos.sql.dto.SeniorData
 trait SeniorsRepository[F[_]] {
   def get(seniorFilters: SeniorFilters): F[List[SeniorUser]]
   def create(seniorData: SeniorData): F[Unit]
+  def getSkills(userId: PersonId): F[List[Skill]]
 }
 
 object SeniorsRepository {
@@ -26,5 +27,10 @@ object SeniorsRepository {
     }
     override def create(seniorData: SeniorData): F[Unit] =
       SeniorsSql.insert.execute(seniorData)
+
+    override def getSkills(
+        userId: PersonId
+      ): F[List[Skill]] =
+      UserSkillsSql.selectUserSkills.queryList(userId)
   }
 }

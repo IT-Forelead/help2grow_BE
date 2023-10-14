@@ -13,6 +13,8 @@ import uz.scala.http4s.utils.Routes
 
 import help2grow.algebras.UsersAlgebra
 import help2grow.domain.AuthedUser
+import help2grow.domain.PersonId
+import help2grow.domain.inputs.SeniorFilters
 import help2grow.domain.inputs.SeniorInput
 
 final case class UserRoutes[F[_]: Monad: JsonDecoder: MonadThrow](
@@ -30,5 +32,12 @@ final case class UserRoutes[F[_]: Monad: JsonDecoder: MonadThrow](
         }
     }
 
-  override val `private`: AuthedRoutes[AuthedUser, F] = AuthedRoutes.empty[AuthedUser, F]
+  override val `private`: AuthedRoutes[AuthedUser, F] = AuthedRoutes.of {
+    case ar @ POST -> Root / "seniors" as _ =>
+      ar.req.decodeR[SeniorFilters] { filters =>
+        users.getSeniors(filters).flatMap(Ok(_))
+      }
+    case POST -> Root / "skills" / UUIDVar(uuid) as _ =>
+      users.getSkills(PersonId(uuid)).flatMap(Ok(_))
+  }
 }

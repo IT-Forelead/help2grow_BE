@@ -7,7 +7,7 @@ import help2grow.domain.Skill
 import help2grow.domain.SkillId
 
 private[repos] object SkillsSql extends Sql[SkillId] {
-  private val codec = (id *: nes).to[Skill]
+  val codec = (id *: nes).to[Skill]
 
   val selectAll: Query[Void, Skill] =
     sql"""SELECT * skills""".query(codec)
