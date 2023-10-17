@@ -35,9 +35,6 @@ lazy val `endpoints-core` =
 lazy val `endpoints-api` =
   project
     .in(file("03-api"))
-    .settings(
-      libraryDependencies ++= Seq()
-    )
     .dependsOn(
       LocalProject("support_services"),
       `endpoints-core`,
@@ -54,9 +51,6 @@ lazy val `endpoints-runner` =
     .dependsOn(
       `endpoints-server`,
       LocalProject("support_database"),
-    )
-    .settings(
-      libraryDependencies ++= Seq()
     )
     .settings(DockerImagePlugin.serviceSetting("endpoints"))
     .enablePlugins(DockerImagePlugin, JavaAppPackaging, DockerPlugin)

@@ -10,7 +10,7 @@ private[repos] object SkillsSql extends Sql[SkillId] {
   val codec = (id *: nes).to[Skill]
 
   val selectAll: Query[Void, Skill] =
-    sql"""SELECT * skills""".query(codec)
+    sql"""SELECT * from skills""".query(codec)
 
   val insert: Command[Skill] =
     sql"""INSERT INTO skills VALUES ($codec)""".command

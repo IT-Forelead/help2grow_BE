@@ -11,8 +11,8 @@ private[repos] object UserSkillsSql {
   private val codec = (UsersSql.id *: SkillsSql.id).to[UserSkill]
 
   val selectUserSkills: Query[PersonId, Skill] =
-    sql"""SELECT s.* user_skills us
-         INNER JOIN skulls s on s.id == us.user_id
+    sql"""SELECT s.* from user_skills us
+         INNER JOIN skills s on s.id = us.user_id
          WHERE us.user_id = ${UsersSql.id}
          """.query(SkillsSql.codec)
 

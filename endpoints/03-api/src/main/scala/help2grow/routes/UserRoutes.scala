@@ -37,7 +37,7 @@ final case class UserRoutes[F[_]: Monad: JsonDecoder: MonadThrow](
       ar.req.decodeR[SeniorFilters] { filters =>
         users.getSeniors(filters).flatMap(Ok(_))
       }
-    case POST -> Root / "skills" / UUIDVar(uuid) as _ =>
+    case GET -> Root / "skills" / UUIDVar(uuid) as _ =>
       users.getSkills(PersonId(uuid)).flatMap(Ok(_))
   }
 }
