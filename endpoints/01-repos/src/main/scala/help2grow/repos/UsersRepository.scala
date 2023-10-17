@@ -2,13 +2,15 @@ package help2grow.repos
 
 import cats.effect.Async
 import cats.effect.Resource
-import help2grow.Phone
-import help2grow.domain.AuthedUser.User
-import help2grow.domain.auth.AccessCredentials
-import help2grow.repos.sql.UsersSql
+import cats.implicits.catsSyntaxMonadError
 import skunk._
 import uz.scala.skunk.syntax.all.skunkSyntaxCommandOps
 import uz.scala.skunk.syntax.all.skunkSyntaxQueryOps
+import help2grow.Phone
+import help2grow.domain.AuthedUser.User
+import help2grow.domain.auth.AccessCredentials
+import help2grow.exception.AError.UserError
+import help2grow.repos.sql.UsersSql
 trait UsersRepository[F[_]] {
   def find(phone: Phone): F[Option[AccessCredentials[User]]]
   def create(userAndHash: AccessCredentials[User]): F[Unit]
@@ -23,6 +25,9 @@ object UsersRepository {
       UsersSql.findByLogin.queryOption(phone)
 
     override def create(userAndHash: AccessCredentials[User]): F[Unit] =
-      UsersSql.insert.execute(userAndHash)
+      UsersSql.insert.execute(userAndHash).adaptError {
+        case SqlState.UniqueViolation(_) =>
+          UserError.PhoneInUse("The phone number already exists")
+      }
   }
 }

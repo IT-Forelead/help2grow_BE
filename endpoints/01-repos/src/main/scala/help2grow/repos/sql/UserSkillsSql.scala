@@ -12,10 +12,10 @@ private[repos] object UserSkillsSql {
 
   val selectUserSkills: Query[PersonId, Skill] =
     sql"""SELECT s.* from user_skills us
-         INNER JOIN skills s on s.id = us.user_id
+         INNER JOIN skills s on s.id = us.skill_id
          WHERE us.user_id = ${UsersSql.id}
          """.query(SkillsSql.codec)
 
-  val insert: Command[UserSkill] =
-    sql"""INSERT INTO user_skills VALUES ($codec)""".command
+  def insertBatch(skills: List[UserSkill]): Command[skills.type] =
+    sql"""INSERT INTO user_skills VALUES ${codec.values.list(skills)}""".command
 }

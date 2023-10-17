@@ -1,8 +1,10 @@
 package help2grow.algebras
 
 import cats.Monad
+import cats.data.NonEmptyList
 import cats.implicits.toFlatMapOps
 import cats.implicits.toFunctorOps
+import cats.implicits.toTraverseOps
 import tsec.passwordhashers.PasswordHasher
 import tsec.passwordhashers.jca.SCrypt
 
@@ -19,6 +21,7 @@ import help2grow.effects.GenUUID
 import help2grow.repos.SeniorsRepository
 import help2grow.repos.UsersRepository
 import help2grow.repos.sql.dto.SeniorData
+import help2grow.repos.sql.dto.UserSkill
 import help2grow.utils.ID
 
 trait UsersAlgebra[F[_]] {
@@ -60,6 +63,13 @@ object UsersAlgebra {
           linkedIn = seniorInput.linkedIn,
           github = seniorInput.github,
         )
+        _ <- NonEmptyList
+          .fromList(
+            seniorInput.skills.map(skillId => UserSkill(id, skillId))
+          )
+          .traverse { skills =>
+            seniorsRepository.createSkills(skills)
+          }
         _ <- seniorsRepository.create(seniorData)
       } yield id
 

@@ -16,18 +16,15 @@ object AError {
   val Prefix: String = "AError: "
   implicit val config: Configuration = Configuration.default.withDiscriminator("Kind")
 
-  sealed trait ChatError extends AError
-  object ChatError {
-    final case class NotFound(chatId: UUID) extends ChatError {
-      override def cause: String = s"Chat not found by id [$chatId]"
-    }
+  sealed trait UserError extends AError
+
+  object UserError {
+    final case class PhoneInUse(cause: String) extends UserError
   }
   sealed trait AuthError extends AError
   object AuthError {
     final case class NoSuchUser(cause: String) extends AuthError
     final case class InvalidToken(cause: String) extends AuthError
-    final case class AuthenticationException(cause: String) extends AuthError
-    final case class AuthorizationException(cause: String) extends AuthError
     final case class PasswordDoesNotMatch(cause: String) extends AuthError
   }
 }

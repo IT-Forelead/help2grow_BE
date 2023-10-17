@@ -16,7 +16,7 @@ case class SeniorInput(
     lastname: NonEmptyString,
     github: NonEmptyString,
     linkedIn: NonEmptyString,
-    skill: List[SkillId],
+    skills: List[SkillId],
     mainSkill: SkillId,
     suggestion: NonEmptyString,
   )
