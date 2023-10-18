@@ -28,7 +28,7 @@ object LiveMiddleware {
     def destroySession(token: JwtToken): F[Unit] =
       OptionT(findUser(AuthMiddleware.ACCESS_TOKEN_PREFIX + token.value))
         .semiflatMap(user =>
-          redis.del(AuthMiddleware.ACCESS_TOKEN_PREFIX + token.value, user.phone)
+          redis.del(AuthMiddleware.ACCESS_TOKEN_PREFIX + token.value, user.email)
         )
         .value
         .void

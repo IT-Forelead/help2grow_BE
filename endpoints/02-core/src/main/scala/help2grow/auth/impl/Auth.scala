@@ -8,7 +8,15 @@ import dev.profunktor.auth.AuthHeaders
 import dev.profunktor.auth.jwt.JwtAuth
 import dev.profunktor.auth.jwt.JwtSymmetricAuth
 import dev.profunktor.auth.jwt.JwtToken
-import help2grow.Phone
+import org.http4s.Request
+import org.typelevel.log4cats.Logger
+import pdi.jwt.JwtAlgorithm
+import tsec.passwordhashers.jca.SCrypt
+import uz.scala.redis.RedisClient
+import uz.scala.syntax.all.circeSyntaxDecoderOps
+import uz.scala.syntax.refined.commonSyntaxAutoUnwrapV
+
+import help2grow.EmailAddress
 import help2grow.auth.AuthConfig
 import help2grow.auth.utils.AuthMiddleware
 import help2grow.auth.utils.JwtExpire
@@ -19,25 +27,17 @@ import help2grow.domain.auth.AuthTokens
 import help2grow.domain.auth.Credentials
 import help2grow.exception.AError.AuthError
 import help2grow.exception.AError.AuthError._
-import org.http4s.Request
-import org.typelevel.log4cats.Logger
-import pdi.jwt.JwtAlgorithm
-import tsec.passwordhashers.jca.SCrypt
-import uz.scala.redis.RedisClient
-import uz.scala.syntax.all.circeSyntaxDecoderOps
-import uz.scala.syntax.refined.commonSyntaxAutoRefineV
-import uz.scala.syntax.refined.commonSyntaxAutoUnwrapV
 
 trait Auth[F[_], A] {
   def login(credentials: Credentials): F[AuthTokens]
-  def destroySession(request: Request[F], phone: Phone): F[Unit]
+  def destroySession(request: Request[F], email: EmailAddress): F[Unit]
   def refresh(request: Request[F]): F[AuthTokens]
 }
 
 object Auth {
   def make[F[_]: Sync](
       config: AuthConfig,
-      findUser: Phone => F[Option[AccessCredentials[AuthedUser]]],
+      findUser: EmailAddress => F[Option[AccessCredentials[AuthedUser]]],
       redis: RedisClient[F],
     )(implicit
       logger: Logger[F]
@@ -48,13 +48,13 @@ object Auth {
       val jwtAuth: JwtSymmetricAuth = JwtAuth.hmac(config.tokenKey.secret, JwtAlgorithm.HS256)
 
       override def login(credentials: Credentials): F[AuthTokens] =
-        findUser(credentials.phone).flatMap {
+        findUser(credentials.email).flatMap {
           case None =>
             NoSuchUser("User Not Found").raiseError[F, AuthTokens]
           case Some(person) if !SCrypt.checkpwUnsafe(credentials.password, person.password) =>
             PasswordDoesNotMatch("Password does not match").raiseError[F, AuthTokens]
           case Some(person) =>
-            OptionT(redis.get(credentials.phone))
+            OptionT(redis.get(credentials.email))
               .cataF(
                 createNewToken(person.data),
                 json =>
@@ -65,7 +65,7 @@ object Auth {
                         .validateJwtToken[F](
                           JwtToken(tokens.accessToken),
                           jwtAuth,
-                          _ => redis.del(tokens.accessToken, tokens.refreshToken, credentials.phone),
+                          _ => redis.del(tokens.accessToken, tokens.refreshToken, credentials.email),
                         )
                     ).foldF(
                       error =>
@@ -87,7 +87,7 @@ object Auth {
                   for {
                     _ <- OptionT(redis.get(AuthMiddleware.REFRESH_TOKEN_PREFIX + token))
                       .semiflatMap(_.decodeAsF[F, AuthedUser])
-                      .semiflatMap(person => redis.del(person.phone))
+                      .semiflatMap(person => redis.del(person.email))
                       .value
                     _ <- redis.del(AuthMiddleware.REFRESH_TOKEN_PREFIX + token.value)
                   } yield {},
@@ -100,16 +100,16 @@ object Auth {
               "Refresh token expired",
             )
             .semiflatMap(_.decodeAsF[F, AuthedUser])
-          _ <- EitherT.right[String](clearOldTokens(person.phone))
+          _ <- EitherT.right[String](clearOldTokens(person.email))
           tokens <- EitherT.right[String](createNewToken(person))
         } yield tokens
         task.leftMap(AuthError.InvalidToken.apply).rethrowT
       }
 
-      override def destroySession(request: Request[F], phone: Phone): F[Unit] =
+      override def destroySession(request: Request[F], email: EmailAddress): F[Unit] =
         AuthHeaders
           .getBearerToken(request)
-          .traverse_(token => redis.del(AuthMiddleware.ACCESS_TOKEN_PREFIX + token.value, phone))
+          .traverse_(token => redis.del(AuthMiddleware.ACCESS_TOKEN_PREFIX + token.value, email))
 
       private def createNewToken(person: AuthedUser): F[AuthTokens] =
         for {
@@ -118,11 +118,11 @@ object Auth {
           refreshToken = AuthMiddleware.REFRESH_TOKEN_PREFIX + tokens.refreshToken
           _ <- redis.put(accessToken, person, config.accessTokenExpiration.value)
           _ <- redis.put(refreshToken, person, config.refreshTokenExpiration.value)
-          _ <- redis.put(person.phone, tokens, config.refreshTokenExpiration.value)
+          _ <- redis.put(person.email, tokens, config.refreshTokenExpiration.value)
         } yield tokens
 
-      private def clearOldTokens(phone: Phone): F[Unit] =
-        OptionT(redis.get(phone))
+      private def clearOldTokens(email: EmailAddress): F[Unit] =
+        OptionT(redis.get(email))
           .semiflatMap(_.decodeAsF[F, AuthTokens])
           .semiflatMap(tokens =>
             redis.del(

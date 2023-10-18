@@ -1,5 +1,4 @@
-package help2grow.domain
-package inputs
+package help2grow.domain.inputs
 
 import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.generic.JsonCodec
@@ -9,14 +8,10 @@ import help2grow.EmailAddress
 import help2grow.domain.SkillId
 
 @JsonCodec
-case class SeniorInput(
+case class JuniorInput(
     email: EmailAddress,
     password: NonEmptyString,
     firstname: NonEmptyString,
     lastname: NonEmptyString,
-    github: NonEmptyString,
-    linkedIn: NonEmptyString,
     skills: List[SkillId],
-    mainSkill: SkillId,
-    suggestion: NonEmptyString,
   )

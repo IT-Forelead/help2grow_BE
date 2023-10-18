@@ -12,7 +12,7 @@ import help2grow.repos.sql.dto.SeniorData
 private[repos] object SeniorsSql extends Sql[PersonId] {
   private val codecSeniorData = (id *: nes *: nes *: SkillsSql.id *: nes).to[SeniorData]
   val codec =
-    (id *: zonedDateTime *: nes *: nes *: role *: phone *: nes *: nes *: SkillsSql.id *: nes)
+    (id *: zonedDateTime *: nes *: nes *: role *: email *: nes *: nes *: SkillsSql.id *: nes)
       .to[SeniorUser]
 
   val insert: Command[SeniorData] =
@@ -27,7 +27,7 @@ private[repos] object SeniorsSql extends Sql[PersonId] {
     val baseQuery: Fragment[Void] =
       sql"""
          SELECT
-           u.id, u.created_at, u.firstname, u.lastname, u.role, u.phone, s.github, s.linked_in, s.main_skill, s.suggestion
+           u.id, u.created_at, u.firstname, u.lastname, u.role, u.email, s.github, s.linked_in, s.main_skill, s.suggestion
          FROM seniors s
          INNER JOIN users u on u.id = s.user_id
        """

@@ -17,7 +17,7 @@ import uz.scala.redis.RedisClient
 import uz.scala.skunk.SkunkSession
 
 import help2grow.Algebras
-import help2grow.Phone
+import help2grow.EmailAddress
 import help2grow.Repositories
 import help2grow.algebras.SkillsAlgebra
 import help2grow.algebras.UsersAlgebra
@@ -49,7 +49,7 @@ case class Environment[F[_]: Async: Logger: Dispatcher](
 object Environment {
   private def findUser[F[_]: Monad](
       repositories: Repositories[F]
-    ): Phone => F[Option[AccessCredentials[AuthedUser]]] = phone =>
+    ): EmailAddress => F[Option[AccessCredentials[AuthedUser]]] = phone =>
     OptionT(repositories.users.find(phone))
       .map(identity[AccessCredentials[AuthedUser]])
       .value

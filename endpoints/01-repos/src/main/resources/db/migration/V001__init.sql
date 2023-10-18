@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users(
   firstname VARCHAR NOT NULL,
   lastname VARCHAR NOT NULL,
   role ROLE NOT NULL,
-  phone VARCHAR NOT NULL UNIQUE,
+  email VARCHAR NOT NULL UNIQUE,
   password VARCHAR NOT NULL
 );
 
@@ -19,7 +19,7 @@ VALUES
     'Maftunbek',
     'Raxmatov',
     'tech_admin',
-    '+998999673398',
+    'admin@scala.uz',
     '$s0$e0801$5JK3Ogs35C2h5htbXQoeEQ==$N7HgNieSnOajn1FuEB7l4PhC6puBSq+e1E8WUaSJcGY='
   );
 

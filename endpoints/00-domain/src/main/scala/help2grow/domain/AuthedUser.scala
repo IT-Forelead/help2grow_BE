@@ -6,7 +6,7 @@ import eu.timepit.refined.types.string.NonEmptyString
 import io.circe.generic.JsonCodec
 import io.circe.refined._
 
-import help2grow.Phone
+import help2grow.EmailAddress
 import help2grow.domain.enums.Role
 
 @JsonCodec
@@ -15,7 +15,7 @@ sealed trait AuthedUser {
   val firstname: NonEmptyString
   val lastname: NonEmptyString
   val role: Role
-  val phone: Phone
+  val email: EmailAddress
 }
 
 object AuthedUser {
@@ -26,7 +26,7 @@ object AuthedUser {
       firstname: NonEmptyString,
       lastname: NonEmptyString,
       role: Role,
-      phone: Phone,
+      email: EmailAddress,
     ) extends AuthedUser
 
   @JsonCodec
@@ -36,7 +36,7 @@ object AuthedUser {
       firstname: NonEmptyString,
       lastname: NonEmptyString,
       role: Role,
-      phone: Phone,
+      email: EmailAddress,
       github: NonEmptyString,
       linkedIn: NonEmptyString,
       mainSkill: SkillId,
