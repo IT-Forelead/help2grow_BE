@@ -18,6 +18,7 @@ import uz.scala.http4s.utils.Routes
 import help2grow.domain.AuthedUser
 import help2grow.http.Environment
 import help2grow.routes.AuthRoutes
+import help2grow.routes.IssuesRoutes
 import help2grow.routes.SkillsRoutes
 import help2grow.routes.UserRoutes
 
@@ -30,6 +31,7 @@ object HttpModule {
         new AuthRoutes[F](env.algebras.auth),
         new SkillsRoutes[F](env.algebras.skills),
         new UserRoutes[F](env.algebras.users),
+        new IssuesRoutes[F](env.githubClient),
       )
       .map { r =>
         Router(

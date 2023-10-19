@@ -37,6 +37,7 @@ lazy val `endpoints-api` =
     .in(file("03-api"))
     .dependsOn(
       LocalProject("support_services"),
+      LocalProject("integration_github"),
       `endpoints-core`,
     )
 

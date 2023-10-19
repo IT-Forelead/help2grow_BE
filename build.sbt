@@ -10,7 +10,7 @@ lazy val `online-shop` =
     .settings(
       name := "help2grow"
     )
-    .aggregate(endpoints, supports, common)
+    .aggregate(endpoints, supports, integrations, common)
 
 lazy val common =
   project
@@ -42,6 +42,12 @@ lazy val supports = project
   .in(file("supports"))
   .settings(
     name := "supports"
+  )
+
+lazy val integrations = project
+  .in(file("integrations"))
+  .settings(
+    name := "integrations"
   )
 
 lazy val endpoints = project

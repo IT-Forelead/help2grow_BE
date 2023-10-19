@@ -12,7 +12,9 @@ import eu.timepit.refined.pureconfig._
 import org.http4s.server
 import org.typelevel.log4cats.Logger
 import pureconfig.generic.auto.exportReader
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import uz.scala.flyway.Migrations
+import uz.scala.integration.github.GithubClient
 import uz.scala.redis.RedisClient
 import uz.scala.skunk.SkunkSession
 
@@ -32,6 +34,7 @@ case class Environment[F[_]: Async: Logger: Dispatcher](
     config: Config,
     repositories: Repositories[F],
     auth: Auth[F, AuthedUser],
+    githubClient: GithubClient[F],
     middleware: server.AuthMiddleware[F, AuthedUser],
   ) {
   private val Repositories(users, skills, seniors) = repositories
@@ -44,6 +47,7 @@ case class Environment[F[_]: Async: Logger: Dispatcher](
       config = config.http,
       middleware = middleware,
       algebras = algebras,
+      githubClient = githubClient,
     )
 }
 object Environment {
@@ -66,5 +70,8 @@ object Environment {
       implicit0(dispatcher: Dispatcher[F]) <- Dispatcher.parallel[F]
       middleware = LiveMiddleware.make[F](config.auth, redis)
       auth = Auth.make[F](config.auth, findUser(repositories), redis)
-    } yield Environment[F](config, repositories, auth, middleware)
+      githubClient <- HttpClientFs2Backend.resource[F]().map { implicit backend =>
+        GithubClient.make[F](config.github)
+      }
+    } yield Environment[F](config, repositories, auth, githubClient, middleware)
 }
