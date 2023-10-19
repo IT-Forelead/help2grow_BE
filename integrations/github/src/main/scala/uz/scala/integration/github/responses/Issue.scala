@@ -18,6 +18,7 @@ case class Issue(
 object Issue {
   @JsonCodec
   case class Label(
+      id: Long,
       color: String,
       name: String,
       description: Option[String],
