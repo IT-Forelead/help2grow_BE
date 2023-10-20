@@ -37,7 +37,7 @@ case class Environment[F[_]: Async: Logger: Dispatcher](
     githubClient: GithubClient[F],
     middleware: server.AuthMiddleware[F, AuthedUser],
   ) {
-  private val Repositories(users, skills, seniors) = repositories
+  private val Repositories(users, skills, seniors, projects, labels) = repositories
   private val usersAlgebra = UsersAlgebra.make[F](users, seniors)
   private val skillsAlgebra = SkillsAlgebra.make[F](skills)
   private val algebras: Algebras[F] = Algebras[F](auth, usersAlgebra, skillsAlgebra)
