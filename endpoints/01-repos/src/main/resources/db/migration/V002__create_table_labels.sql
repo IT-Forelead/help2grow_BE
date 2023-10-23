@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS projects(
   id UUID PRIMARY KEY NOT NULL,
   repo VARCHAR NOT NULL,
   owner VARCHAR NOT NULL,
+  token VARCHAR NOT NULL,
   description VARCHAR NULL
 );
 

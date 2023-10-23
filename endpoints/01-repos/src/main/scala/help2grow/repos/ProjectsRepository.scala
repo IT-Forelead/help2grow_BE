@@ -5,9 +5,11 @@ import cats.effect.Async
 import cats.effect.Resource
 import skunk._
 import uz.scala.skunk.syntax.all.skunkSyntaxCommandOps
+import uz.scala.skunk.syntax.all.skunkSyntaxQueryOps
 import uz.scala.skunk.syntax.all.skunkSyntaxQueryVoidOps
 
 import help2grow.domain.Project
+import help2grow.domain.ProjectId
 import help2grow.repos.sql.ProjectSkillsSql
 import help2grow.repos.sql.ProjectsSql
 import help2grow.repos.sql.dto.ProjectSkill
@@ -15,6 +17,8 @@ trait ProjectsRepository[F[_]] {
   def get: F[List[Project]]
   def create(project: Project): F[Unit]
   def createSkills(skills: NonEmptyList[ProjectSkill]): F[Unit]
+
+  def findById(projectId: ProjectId): F[Option[Project]]
 }
 
 object ProjectsRepository {
@@ -30,5 +34,7 @@ object ProjectsRepository {
       val skillsList = skills.toList
       ProjectSkillsSql.insertBatch(skillsList).execute(skillsList)
     }
+    override def findById(projectId: ProjectId): F[Option[Project]] =
+      ProjectsSql.findById.queryOption(projectId)
   }
 }

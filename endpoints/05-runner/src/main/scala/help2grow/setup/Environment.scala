@@ -21,6 +21,7 @@ import uz.scala.skunk.SkunkSession
 import help2grow.Algebras
 import help2grow.EmailAddress
 import help2grow.Repositories
+import help2grow.algebras.ProjectsAlgebra
 import help2grow.algebras.SkillsAlgebra
 import help2grow.algebras.UsersAlgebra
 import help2grow.auth.impl.Auth
@@ -40,7 +41,9 @@ case class Environment[F[_]: Async: Logger: Dispatcher](
   private val Repositories(users, skills, seniors, projects, labels) = repositories
   private val usersAlgebra = UsersAlgebra.make[F](users, seniors)
   private val skillsAlgebra = SkillsAlgebra.make[F](skills)
-  private val algebras: Algebras[F] = Algebras[F](auth, usersAlgebra, skillsAlgebra)
+  private val projectsAlgebra = ProjectsAlgebra.make[F](projects)
+  private val algebras: Algebras[F] =
+    Algebras[F](auth, usersAlgebra, skillsAlgebra, projectsAlgebra)
 
   lazy val toServer: ServerEnvironment[F] =
     ServerEnvironment(

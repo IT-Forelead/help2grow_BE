@@ -14,8 +14,12 @@ import uz.scalal.sttp.SttpClient
 import uz.scalal.sttp.SttpClientAuth
 
 trait GithubClient[F[_]] {
-  def getIssues(owner: NonEmptyString, repo: NonEmptyString): F[List[Issue]]
-  def createLabel(labelReq: CreateLabel): F[Issue.Label]
+  def getIssues(
+      owner: NonEmptyString,
+      repo: NonEmptyString,
+      token: NonEmptyString,
+    ): F[List[Issue]]
+  def createLabel(labelReq: CreateLabel, token: NonEmptyString): F[Issue.Label]
 }
 
 object GithubClient {
@@ -27,22 +31,30 @@ object GithubClient {
 
   private class Impl[F[_]: Sync: SttpBackends.Simple](config: GithubConfig)
       extends GithubClient[F] {
-    private lazy val client: SttpClient.CirceJson[F] =
+    private def client(token: String): SttpClient.CirceJson[F] =
       SttpClient.circeJson(
         config.apiUri,
-        SttpClientAuth.bearer(config.token.value),
+        SttpClientAuth.bearer(token),
       )
-    override def getIssues(owner: NonEmptyString, repo: NonEmptyString): F[List[Issue]] =
-      client.request(GetIssues(owner, repo))
+    override def getIssues(
+        owner: NonEmptyString,
+        repo: NonEmptyString,
+        token: NonEmptyString,
+      ): F[List[Issue]] =
+      client(token.value).request(GetIssues(owner, repo))
 
-    override def createLabel(labelReq: CreateLabel): F[Issue.Label] =
-      client.request(labelReq)
+    override def createLabel(labelReq: CreateLabel, token: NonEmptyString): F[Issue.Label] =
+      client(token.value).request(labelReq)
   }
 
   private class NoOpTelegramClient[F[_]: Applicative] extends GithubClient[F] {
-    override def getIssues(owner: NonEmptyString, repo: NonEmptyString): F[List[Issue]] =
+    override def getIssues(
+        owner: NonEmptyString,
+        repo: NonEmptyString,
+        token: NonEmptyString,
+      ): F[List[Issue]] =
       Applicative[F].pure(List.empty)
-    override def createLabel(labelReq: CreateLabel): F[Issue.Label] =
+    override def createLabel(labelReq: CreateLabel, token: NonEmptyString): F[Issue.Label] =
       Applicative[F].pure(
         Issue.Label(Random.between(1L, Long.MaxValue), "f29513", "BUG", "This is mock label".some)
       )
