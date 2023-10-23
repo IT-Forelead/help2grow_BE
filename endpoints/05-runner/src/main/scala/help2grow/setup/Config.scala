@@ -3,6 +3,7 @@ package help2grow.setup
 import uz.scala.flyway.MigrationsConfig
 import uz.scala.http4s.HttpServerConfig
 import uz.scala.integration.github.GithubConfig
+import uz.scala.mailer.MailerConfig
 import uz.scala.redis.RedisConfig
 import uz.scala.skunk.DataBaseConfig
 
@@ -14,6 +15,7 @@ case class Config(
     auth: AuthConfig,
     redis: RedisConfig,
     github: GithubConfig,
+    mailer: MailerConfig,
   ) {
   lazy val migrations: MigrationsConfig = MigrationsConfig(
     hostname = database.host.value,

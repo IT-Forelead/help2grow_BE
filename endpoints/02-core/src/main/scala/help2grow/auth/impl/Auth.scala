@@ -53,6 +53,8 @@ object Auth {
             NoSuchUser("User Not Found").raiseError[F, AuthTokens]
           case Some(person) if !SCrypt.checkpwUnsafe(credentials.password, person.password) =>
             PasswordDoesNotMatch("Password does not match").raiseError[F, AuthTokens]
+          case Some(person) if person.data.acceptedAt.isEmpty =>
+            EmailDoesNotConfirmed("Email does not confirmed").raiseError[F, AuthTokens]
           case Some(person) =>
             OptionT(redis.get(credentials.email))
               .cataF(

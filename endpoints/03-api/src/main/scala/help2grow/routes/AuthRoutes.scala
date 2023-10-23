@@ -12,12 +12,14 @@ import uz.scala.http4s.syntax.all.deriveEntityEncoder
 import uz.scala.http4s.syntax.all.http4SyntaxReqOps
 import uz.scala.http4s.utils.Routes
 
+import help2grow.algebras.UsersAlgebra
 import help2grow.auth.impl.Auth
 import help2grow.domain.AuthedUser
 import help2grow.domain.auth.Credentials
 
 final case class AuthRoutes[F[_]: Monad: JsonDecoder: MonadThrow](
-    auth: Auth[F, AuthedUser]
+    auth: Auth[F, AuthedUser],
+    users: UsersAlgebra[F],
   )(implicit
     logger: Logger[F]
   ) extends Routes[F, AuthedUser] {
@@ -31,6 +33,8 @@ final case class AuthRoutes[F[_]: Monad: JsonDecoder: MonadThrow](
         }
       case req @ GET -> Root / "refresh" =>
         auth.refresh(req).flatMap(Ok(_))
+      case GET -> Root / "confirmemail" :? linkCode(token) =>
+        users.confirmEmail(token).flatMap(_ => Accepted())
     }
 
   override val `private`: AuthedRoutes[AuthedUser, F] = AuthedRoutes.of {

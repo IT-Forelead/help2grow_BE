@@ -16,6 +16,7 @@ sealed trait AuthedUser {
   val lastname: NonEmptyString
   val role: Role
   val email: EmailAddress
+  val acceptedAt: Option[ZonedDateTime]
 }
 
 object AuthedUser {
@@ -27,6 +28,8 @@ object AuthedUser {
       lastname: NonEmptyString,
       role: Role,
       email: EmailAddress,
+      updatedAt: Option[ZonedDateTime] = None,
+      acceptedAt: Option[ZonedDateTime] = None,
     ) extends AuthedUser
 
   @JsonCodec
@@ -37,6 +40,8 @@ object AuthedUser {
       lastname: NonEmptyString,
       role: Role,
       email: EmailAddress,
+      updatedAt: Option[ZonedDateTime] = None,
+      acceptedAt: Option[ZonedDateTime] = None,
       github: NonEmptyString,
       linkedIn: NonEmptyString,
       mainSkill: SkillId,

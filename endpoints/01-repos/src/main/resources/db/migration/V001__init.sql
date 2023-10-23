@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS users(
   lastname VARCHAR NOT NULL,
   role ROLE NOT NULL,
   email VARCHAR NOT NULL UNIQUE,
+  updated_at TIMESTAMP WITH TIME ZONE NULL,
+  accepted_at TIMESTAMP WITH TIME ZONE NULL,
   password VARCHAR NOT NULL
 );
 
@@ -20,6 +22,8 @@ VALUES
     'Raxmatov',
     'tech_admin',
     'admin@scala.uz',
+    null,
+    '2023-06-30T16:02:51+05:00',
     '$s0$e0801$5JK3Ogs35C2h5htbXQoeEQ==$N7HgNieSnOajn1FuEB7l4PhC6puBSq+e1E8WUaSJcGY='
   );
 

@@ -1,13 +1,28 @@
 package help2grow.algebras
 
-import cats.Monad
+import scala.concurrent.duration.DurationInt
+
+import cats.MonadThrow
 import cats.data.NonEmptyList
+import cats.data.OptionT
+import cats.effect.std.Random
+import cats.implicits.catsSyntaxApplicativeErrorId
+import cats.implicits.catsSyntaxOptionId
 import cats.implicits.toFlatMapOps
 import cats.implicits.toFunctorOps
 import cats.implicits.toTraverseOps
 import tsec.passwordhashers.PasswordHasher
 import tsec.passwordhashers.jca.SCrypt
+import uz.scala.mailer.Mailer
+import uz.scala.mailer.data.Content
+import uz.scala.mailer.data.Email
+import uz.scala.mailer.data.Text
+import uz.scala.mailer.data.types.Subject
+import uz.scala.redis.RedisClient
+import uz.scala.syntax.all.circeSyntaxDecoderOps
+import uz.scala.syntax.refined.commonSyntaxAutoRefineV
 
+import help2grow.AppDomain
 import help2grow.domain.AuthedUser.SeniorUser
 import help2grow.domain.AuthedUser.User
 import help2grow.domain.PersonId
@@ -20,6 +35,8 @@ import help2grow.domain.inputs.SeniorInput
 import help2grow.domain.inputs.UserFilters
 import help2grow.effects.Calendar
 import help2grow.effects.GenUUID
+import help2grow.exception.AError.AuthError.LinkCodeExpired
+import help2grow.randomStr
 import help2grow.repos.SeniorsRepository
 import help2grow.repos.UsersRepository
 import help2grow.repos.sql.dto.SeniorData
@@ -32,14 +49,17 @@ trait UsersAlgebra[F[_]] {
   def getSeniors(seniorFilters: SeniorFilters): F[List[SeniorUser]]
   def getJuniors(filter: UserFilters): F[List[User]]
   def getSkills(userId: PersonId): F[List[Skill]]
+  def confirmEmail(token: String): F[Unit]
 }
 
 object UsersAlgebra {
-  def make[F[_]: Monad: GenUUID: Calendar](
+  def make[F[_]: MonadThrow: GenUUID: Calendar: Random](
       usersRepository: UsersRepository[F],
       seniorsRepository: SeniorsRepository[F],
     )(implicit
-      P: PasswordHasher[F, SCrypt]
+      P: PasswordHasher[F, SCrypt],
+      mailer: Mailer[F],
+      redis: RedisClient[F],
     ): UsersAlgebra[F] = new UsersAlgebra[F] {
     override def createSenior(
         seniorInput: SeniorInput
@@ -75,6 +95,22 @@ object UsersAlgebra {
             seniorsRepository.createSkills(skills)
           }
         _ <- seniorsRepository.create(seniorData)
+        linkCode = randomStr[F](8)
+        _ <- redis.put(s"confirm_$linkCode", id.value, 15.minutes)
+        email = Email(
+          from = "no-reply@it-forelead.uz",
+          subject = Subject("Подтвердите свой адрес электронной почты"),
+          content = Content(text =
+            Text(
+              s"""Добро пожаловать\n\n
+                 Подтвердите свой адрес электронной почты,
+                 откройте эту ссылку в браузере $AppDomain/auth/confirmemail?t=$linkCode
+                 С Уважением Команда IT-Forelead"""
+            ).some
+          ),
+          to = NonEmptyList.one(user.email),
+        )
+        _ <- mailer.send(email)
       } yield id
 
     override def createJunior(
@@ -103,6 +139,22 @@ object UsersAlgebra {
           .traverse { skills =>
             seniorsRepository.createSkills(skills)
           }
+        linkCode = randomStr[F](8)
+        _ <- redis.put(s"confirm_$linkCode", id.value, 15.minutes)
+        email = Email(
+          from = "no-reply@it-forelead.uz",
+          subject = Subject("Подтвердите свой адрес электронной почты"),
+          content = Content(text =
+            Text(
+              s"""Добро пожаловать\n\n
+                 Подтвердите свой адрес электронной почты,
+                 откройте эту ссылку в браузере $AppDomain/auth/confirmemail?t=$linkCode
+                 С Уважением Команда IT-Forelead"""
+            ).some
+          ),
+          to = NonEmptyList.one(user.email),
+        )
+        _ <- mailer.send(email)
       } yield id
 
     override def getSeniors(seniorFilters: SeniorFilters): F[List[SeniorUser]] =
@@ -113,5 +165,20 @@ object UsersAlgebra {
 
     override def getSkills(userId: PersonId): F[List[Skill]] =
       seniorsRepository.getSkills(userId)
+
+    override def confirmEmail(token: String): F[Unit] =
+      OptionT(redis.get(s"confirm_$token"))
+        .semiflatMap(_.decodeAsF[F, PersonId])
+        .foldF(
+          LinkCodeExpired("Link code is expired").raiseError[F, Unit]
+        ) { personId =>
+          Calendar[F].currentZonedDateTime.flatMap { now =>
+            usersRepository.update(personId)(
+              _.copy(
+                acceptedAt = now.some
+              )
+            )
+          }
+        }
   }
 }

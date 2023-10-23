@@ -25,7 +25,7 @@ object HttpModule {
     ): NonEmptyList[HttpRoutes[F]] =
     NonEmptyList
       .of[Routes[F, AuthedUser]](
-        new AuthRoutes[F](env.algebras.auth),
+        new AuthRoutes[F](env.algebras.auth, env.algebras.users),
         new SkillsRoutes[F](env.algebras.skills),
         new UserRoutes[F](env.algebras.users),
         new IssuesRoutes[F](env.githubClient, env.algebras.projects),

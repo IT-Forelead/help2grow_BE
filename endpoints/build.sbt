@@ -30,6 +30,7 @@ lazy val `endpoints-core` =
     .dependsOn(
       `endpoints-repos`,
       LocalProject("support_redis"),
+      LocalProject("support_mailer"),
     )
 
 lazy val `endpoints-api` =

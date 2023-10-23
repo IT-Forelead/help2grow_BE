@@ -6,6 +6,7 @@ import cats.effect.Async
 import cats.effect.Resource
 import cats.effect.std.Console
 import cats.effect.std.Dispatcher
+import cats.effect.std.Random
 import dev.profunktor.redis4cats.Redis
 import dev.profunktor.redis4cats.effect.Log.NoOp.instance
 import eu.timepit.refined.pureconfig._
@@ -15,6 +16,7 @@ import pureconfig.generic.auto.exportReader
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import uz.scala.flyway.Migrations
 import uz.scala.integration.github.GithubClient
+import uz.scala.mailer.Mailer
 import uz.scala.redis.RedisClient
 import uz.scala.skunk.SkunkSession
 
@@ -31,12 +33,15 @@ import help2grow.domain.auth.AccessCredentials
 import help2grow.http.{ Environment => ServerEnvironment }
 import help2grow.utils.ConfigLoader
 
-case class Environment[F[_]: Async: Logger: Dispatcher](
+case class Environment[F[_]: Async: Logger: Dispatcher: Random](
     config: Config,
     repositories: Repositories[F],
     auth: Auth[F, AuthedUser],
     githubClient: GithubClient[F],
     middleware: server.AuthMiddleware[F, AuthedUser],
+  )(implicit
+    redisClient: RedisClient[F],
+    mailer: Mailer[F],
   ) {
   private val Repositories(users, skills, seniors, projects, labels) = repositories
   private val usersAlgebra = UsersAlgebra.make[F](users, seniors)
@@ -68,7 +73,10 @@ object Environment {
       repositories <- SkunkSession.make[F](config.database).map { implicit session =>
         Repositories.make[F]
       }
-      redis <- Redis[F].utf8(config.redis.uri.toString).map(RedisClient[F](_, config.redis.prefix))
+      implicit0(random: Random[F]) <- Resource.eval(Random.scalaUtilRandom[F])
+      implicit0(redis: RedisClient[F]) <- Redis[F]
+        .utf8(config.redis.uri.toString)
+        .map(RedisClient[F](_, config.redis.prefix))
 
       implicit0(dispatcher: Dispatcher[F]) <- Dispatcher.parallel[F]
       middleware = LiveMiddleware.make[F](config.auth, redis)
@@ -76,5 +84,6 @@ object Environment {
       githubClient <- HttpClientFs2Backend.resource[F]().map { implicit backend =>
         GithubClient.make[F](config.github)
       }
+      implicit0(mailer: Mailer[F]) = Mailer.make[F](config.mailer)
     } yield Environment[F](config, repositories, auth, githubClient, middleware)
 }

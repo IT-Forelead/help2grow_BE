@@ -24,6 +24,8 @@ object Dependencies {
     lazy val `cats-tagless` = "0.14.0"
     lazy val derevo = "0.13.0"
     lazy val postgresql = "42.5.4"
+    lazy val mailer = "1.4.7"
+    lazy val `cats-retry` = "3.1.0"
   }
   trait LibGroup {
     def all: Seq[ModuleID]
@@ -62,6 +64,10 @@ object Dependencies {
       }
     }
   }
+
+  object javax {
+    lazy val mailer = "javax.mail" % "mail" % Versions.mailer
+  }
   object io {
     object circe extends LibGroup {
       private def circe(artifact: String): ModuleID =
@@ -96,6 +102,9 @@ object Dependencies {
   }
   object org {
     lazy val postgresql: ModuleID = "org.postgresql" % "postgresql" % Versions.postgresql
+    object github {
+      lazy val retry = "com.github.cb372" %% "cats-retry" % Versions.`cats-retry`
+    }
 
     object typelevel {
       object cats {
